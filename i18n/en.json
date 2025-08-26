@@ -62,5 +62,8 @@
   "tabSearch":"Search",
   "tabCars":"Cars",
   "tabMessages":"Messages",
-  "tabProfile":"Profile"
+  "tabProfile":"Profile",
+  "description": "Description",
+  "gallery": "Gallery",
+  "location": "Location"
 }

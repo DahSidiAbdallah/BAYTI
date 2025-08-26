@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ScrollView, View, Text, StyleSheet, ImageBackground, TouchableOpacity, Image, Modal, FlatList, Platform as RNPlatform } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, ImageBackground, TouchableOpacity, Image, Modal, FlatList, Platform as RNPlatform, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MOCK_PROPERTIES, MOCK_CARS } from '../../data/mockData';
-import { ChevronLeft, Bookmark, Star, MapPin, Phone, MessageSquare } from 'lucide-react-native';
+import { ChevronLeft, Bookmark, Star, MapPin, Phone, MessageSquare, Heart, Share2, Calendar, Users, Car as CarIcon, Home as HomeIcon } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import theme from '../theme';
-// ...existing code...
+import { t } from '@/i18n';
+
+const { width } = Dimensions.get('window');
 
 // Leaflet helpers for web
 async function loadLeaflet() {
@@ -31,6 +34,7 @@ export default function ListingDetails() {
   const [expanded, setExpanded] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [isFavorited, setIsFavorited] = useState(false);
 
   // pick item by id if provided, else first available
   let item: any = null;
@@ -41,13 +45,16 @@ export default function ListingDetails() {
     if (kind === 'property') item = MOCK_PROPERTIES.find((p) => String(p.id) === rawId);
     else if (kind === 'car') item = MOCK_CARS.find((c) => String(c.id) === rawId);
   }
+  
+  // If no item found, fallback to first property
   if (!item) {
-    // fallback: first property or car
-    item = MOCK_PROPERTIES[0] ?? MOCK_CARS[0];
+    item = MOCK_PROPERTIES[0];
   }
 
+  const isProperty = 'title' in item;
   const title = 'title' in item ? item.title : item.name;
   const subtitle = 'location' in item ? item.location : item.brand;
+  const price = isProperty ? `$${item.price}/${t('mo')}` : `$${item.pricePerDay}/${t('day')}`;
 
   const openGallery = (index = 0) => {
     setGalleryIndex(index);
@@ -69,80 +76,176 @@ export default function ListingDetails() {
     };
   }, [item.latitude, item.longitude]);
 
-  // render a small map view centered on this listing
-  // ...existing code...
-
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
+    <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 28 }}>
-        <ImageBackground source={{ uri: item.image }} style={styles.hero} imageStyle={{ borderBottomLeftRadius: theme.radii.image, borderBottomRightRadius: theme.radii.image }}>
+        <ImageBackground 
+          source={{ uri: item.image }} 
+          style={styles.hero} 
+          imageStyle={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
+        >
           <View style={styles.heroTop}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}><ChevronLeft color="#fff" size={theme.iconSizes.topBar} /></TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn}><Bookmark color="#fff" size={theme.iconSizes.topBar} /></TouchableOpacity>
+            <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+              <ChevronLeft color="#fff" size={24} />
+            </TouchableOpacity>
+            <View style={styles.topRightActions}>
+              <TouchableOpacity style={styles.iconBtn}>
+                <Share2 color="#fff" size={20} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.iconBtn}
+                onPress={() => setIsFavorited(!isFavorited)}
+              >
+                <Heart 
+                  color={isFavorited ? "#FF6B6B" : "#fff"} 
+                  fill={isFavorited ? "#FF6B6B" : "transparent"}
+                  size={20} 
+                />
+              </TouchableOpacity>
+            </View>
           </View>
-          <LinearGradient colors={[ 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.35)', 'rgba(0,0,0,0.7)' ]} style={styles.gradient} />
+          <LinearGradient 
+            colors={['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.8)']} 
+            style={styles.gradient} 
+          />
           <View style={styles.heroBottom}>
             <Text style={styles.heroTitle}>{title}</Text>
             <View style={styles.heroMeta}>
               <MapPin size={theme.iconSizes.inline} color="#fff" />
               <Text style={styles.heroLocation}>{subtitle}</Text>
+            </View>
+            <View style={styles.priceRatingRow}>
+              <Text style={styles.heroPrice}>{price}</Text>
               <View style={styles.ratingWrap}>
-                <Star size={theme.iconSizes.meta} color="#ffd54f" />
-                <Text style={styles.ratingText}>{(item.rating ?? 4.8).toFixed(2)}</Text>
+                <Star size={14} color="#FFD700" fill="#FFD700" />
+                <Text style={styles.ratingText}>{(item.rating ?? 4.8).toFixed(1)}</Text>
               </View>
             </View>
           </View>
         </ImageBackground>
 
         <View style={styles.section}>
-          <View style={styles.chipsRow}>
-            <View style={styles.chip}><Text style={styles.chipText}>{item.beds ?? '—'} Beds</Text></View>
-            <View style={styles.chip}><Text style={styles.chipText}>{item.toilets ?? '—'} Toilets</Text></View>
-            <View style={styles.chip}><Text style={styles.chipText}>{item.garage ?? '—'} Garage</Text></View>
-          </View>
+          {isProperty ? (
+            <View style={styles.featuresRow}>
+              <View style={styles.featureItem}>
+                <HomeIcon size={20} color={theme.colors.primary} />
+                <Text style={styles.featureText}>{item.bedrooms} {t('bed')}</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Users size={20} color={theme.colors.primary} />
+                <Text style={styles.featureText}>{item.bathrooms} {t('bath')}</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <MapPin size={20} color={theme.colors.primary} />
+                <Text style={styles.featureText}>{item.area} {t('sqft')}</Text>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.featuresRow}>
+              <View style={styles.featureItem}>
+                <CarIcon size={20} color={theme.colors.primary} />
+                <Text style={styles.featureText}>{item.brand}</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Users size={20} color={theme.colors.primary} />
+                <Text style={styles.featureText}>{item.seats} {t('seats')}</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Calendar size={20} color={theme.colors.primary} />
+                <Text style={styles.featureText}>{item.year}</Text>
+              </View>
+            </View>
+          )}
 
-          <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.description}>{expanded ? item.description ?? '' : (item.description ?? '').slice(0, 220)}{!expanded && (item.description ?? '').length > 220 ? '...' : ''}</Text>
-          { (item.description ?? '').length > 220 ? (
-            <TouchableOpacity onPress={() => setExpanded(!expanded)}><Text style={styles.showMore}>{expanded ? 'Show less' : 'Show More'}</Text></TouchableOpacity>
-          ) : null }
+          <Text style={styles.sectionTitle}>{t('description') || 'Description'}</Text>
+          <Text style={styles.description}>
+            {expanded ? (item.description ?? getDefaultDescription(isProperty)) : (item.description ?? getDefaultDescription(isProperty)).slice(0, 150)}
+            {!expanded && (item.description ?? getDefaultDescription(isProperty)).length > 150 ? '...' : ''}
+          </Text>
+          {(item.description ?? getDefaultDescription(isProperty)).length > 150 && (
+            <TouchableOpacity onPress={() => setExpanded(!expanded)}>
+              <Text style={styles.showMore}>{expanded ? 'Show less' : 'Show More'}</Text>
+            </TouchableOpacity>
+          )}
 
           <View style={styles.ownerRow}>
-            <Image source={{ uri: item.ownerAvatar ?? 'https://picsum.photos/64' }} style={styles.ownerAvatar} />
+            <Image 
+              source={{ uri: item.ownerAvatar ?? 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&fit=crop' }} 
+              style={styles.ownerAvatar} 
+            />
             <View style={{ flex: 1 }}>
-              <Text style={styles.ownerName}>{item.ownerName ?? 'Owner'}</Text>
-              <Text style={styles.ownerRole}>Owner</Text>
+              <Text style={styles.ownerName}>{item.ownerName ?? 'Sarah Johnson'}</Text>
+              <Text style={styles.ownerRole}>{isProperty ? 'Property Owner' : 'Car Owner'}</Text>
+              <View style={styles.ownerRating}>
+                <Star size={12} color="#FFD700" fill="#FFD700" />
+                <Text style={styles.ownerRatingText}>4.9 • 127 reviews</Text>
+              </View>
             </View>
             <View style={{ flexDirection: 'row', gap: theme.spacing.s3 }}>
-              <TouchableOpacity style={styles.contactIcon}><Phone color="#fff" size={theme.iconSizes.inline} /></TouchableOpacity>
-              <TouchableOpacity style={styles.contactIcon}><MessageSquare color="#fff" size={theme.iconSizes.inline} /></TouchableOpacity>
+              <TouchableOpacity style={styles.contactIcon}>
+                <Phone color="#fff" size={16} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.contactIcon}>
+                <MessageSquare color="#fff" size={16} />
+              </TouchableOpacity>
             </View>
           </View>
 
-          <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Gallery</Text>
-          <FlatList data={item.gallery ?? [item.image]} horizontal keyExtractor={(_, i) => String(i)} renderItem={({ item: g, index }) => (
+          <Text style={[styles.sectionTitle, { marginTop: 24 }]}>{t('gallery') || 'Gallery'}</Text>
+          <FlatList 
+            data={item.gallery ?? [item.image, item.image, item.image]} 
+            horizontal 
+            keyExtractor={(_, i) => String(i)} 
+            renderItem={({ item: g, index }) => (
             <TouchableOpacity onPress={() => openGallery(index)}>
               <Image source={{ uri: g }} style={styles.galleryThumb} />
             </TouchableOpacity>
-          )} showsHorizontalScrollIndicator={false} />
+          )} 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingRight: 20 }}
+          />
 
-    <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Location</Text>
-    <MapPreview />
+          <Text style={[styles.sectionTitle, { marginTop: 24 }]}>{t('location') || 'Location'}</Text>
+          <MapPreview lat={item.latitude} lon={item.longitude} />
         </View>
       </ScrollView>
 
-    <TouchableOpacity style={styles.rentBtn}><Text style={styles.rentBtnText}>Rent Now</Text></TouchableOpacity>
+      <View style={styles.bottomBar}>
+        <View style={styles.priceContainer}>
+          <Text style={styles.bottomPrice}>{price}</Text>
+          <Text style={styles.bottomPriceLabel}>{isProperty ? 'per month' : 'per day'}</Text>
+        </View>
+        <TouchableOpacity style={styles.rentBtn}>
+          <Text style={styles.rentBtnText}>{isProperty ? 'Contact Owner' : 'Book Now'}</Text>
+        </TouchableOpacity>
+      </View>
 
       <Modal visible={galleryOpen} transparent onRequestClose={() => setGalleryOpen(false)}>
         <View style={styles.modalBackdrop}>
-          <FlatList data={item.gallery ?? [item.image]} horizontal pagingEnabled initialScrollIndex={galleryIndex} keyExtractor={(_, i) => String(i)} renderItem={({ item: g }) => (
-            <Image source={{ uri: g }} style={styles.modalImage} />
-          )} />
-          <TouchableOpacity style={styles.modalClose} onPress={() => setGalleryOpen(false)}><Text style={{ color: '#fff' }}>Close</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.modalClose} onPress={() => setGalleryOpen(false)}>
+            <ChevronLeft color="#fff" size={24} />
+          </TouchableOpacity>
+          <FlatList 
+            data={item.gallery ?? [item.image, item.image, item.image]} 
+            horizontal 
+            pagingEnabled 
+            initialScrollIndex={galleryIndex} 
+            keyExtractor={(_, i) => String(i)} 
+            renderItem={({ item: g }) => (
+              <Image source={{ uri: g }} style={styles.modalImage} />
+            )} 
+          />
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
+}
+
+function getDefaultDescription(isProperty: boolean) {
+  if (isProperty) {
+    return "This beautiful property offers modern amenities and comfortable living spaces. Located in a prime area with easy access to transportation, shopping, and dining. Perfect for families or professionals looking for quality accommodation.";
+  }
+  return "Well-maintained vehicle with excellent performance and comfort features. Regular maintenance and cleaning ensure a premium experience for all passengers. Ideal for city trips, business travel, or weekend getaways.";
 }
 
 // initialize leaflet map when on web and element is present
@@ -169,7 +272,7 @@ function initListingMap(elId: string, lat?: number, lon?: number) {
 function MapPreview({ lat, lon, image }: Readonly<{ lat?: number; lon?: number; image?: string }>) {
   if (RNPlatform.OS === 'web') {
     return (
-      <div style={{ width: '100%', height: 220 }} id="listing-map" />
+      <div style={{ width: '100%', height: 200, borderRadius: 16, overflow: 'hidden' }} id="listing-map" />
     );
   }
 
@@ -178,7 +281,15 @@ function MapPreview({ lat, lon, image }: Readonly<{ lat?: number; lon?: number; 
     const MapView = require('react-native-maps').default;
     return (
       // @ts-ignore
-      <MapView style={{ width: '100%', height: 220 }} initialRegion={{ latitude: lat ?? 37.7749, longitude: lon ?? -122.4194, latitudeDelta: 0.01, longitudeDelta: 0.01 }} />
+      <MapView 
+        style={styles.mapPreview} 
+        initialRegion={{ 
+          latitude: lat ?? 37.7749, 
+          longitude: lon ?? -122.4194, 
+          latitudeDelta: 0.01, 
+          longitudeDelta: 0.01 
+        }} 
+      />
     );
   } catch (err) {
     console.warn('react-native-maps not available', err);
@@ -187,33 +298,233 @@ function MapPreview({ lat, lon, image }: Readonly<{ lat?: number; lon?: number; 
 }
 
 const styles = StyleSheet.create({
-  hero: { height: 340, width: '100%', justifyContent: 'space-between' },
-  heroTop: { flexDirection: 'row', justifyContent: 'space-between', padding: theme.spacing.s3, marginTop: theme.spacing.s3 },
-  iconBtn: { backgroundColor: 'rgba(0,0,0,0.4)', padding: theme.spacing.s2, borderRadius: theme.radii.chip },
-  gradient: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 140, borderBottomLeftRadius: theme.radii.image, borderBottomRightRadius: theme.radii.image },
-  heroBottom: { padding: theme.spacing.s4, paddingTop: 0 },
-  heroTitle: { color: '#fff', fontSize: 24, fontWeight: '800' },
-  heroMeta: { flexDirection: 'row', alignItems: 'center', marginTop: theme.spacing.s2 },
-  heroLocation: { color: '#fff', marginLeft: theme.spacing.s2, marginRight: theme.spacing.s4 },
-  ratingWrap: { flexDirection: 'row', alignItems: 'center', marginLeft: 'auto', backgroundColor: 'rgba(255,255,255,0.12)', paddingHorizontal: theme.spacing.s3, paddingVertical: 4, borderRadius: theme.radii.chip },
-  ratingText: { color: '#fff', marginLeft: theme.spacing.s2, fontWeight: '700' },
-  section: { padding: theme.spacing.s4 },
-  chipsRow: { flexDirection: 'row', marginTop: theme.spacing.s2 },
-  chip: { backgroundColor: theme.colors.surface, padding: theme.spacing.s2, borderRadius: theme.radii.chip, borderWidth: 1, borderColor: theme.colors.divider, marginRight: theme.spacing.s3 },
-  chipText: { fontWeight: '700', fontSize: theme.typography.micro },
-  sectionTitle: { fontSize: theme.typography.cardTitle, fontWeight: '700', marginTop: theme.spacing.s3, color: theme.colors.title },
-  description: { color: theme.colors.secondary, marginTop: theme.spacing.s2, lineHeight: 20, fontSize: theme.typography.body },
-  showMore: { color: theme.colors.primary, marginTop: theme.spacing.s2 },
-  ownerRow: { flexDirection: 'row', alignItems: 'center', marginTop: theme.spacing.s4 },
-  ownerAvatar: { width: 56, height: 56, borderRadius: 28, marginRight: theme.spacing.s3 },
-  ownerName: { fontWeight: '700' },
-  ownerRole: { color: theme.colors.secondary, fontSize: theme.typography.micro },
-  contactIcon: { backgroundColor: theme.colors.primary, padding: theme.spacing.s2, borderRadius: theme.radii.button, marginLeft: theme.spacing.s2 },
-  galleryThumb: { width: 120, height: 90, borderRadius: theme.radii.image, marginRight: theme.spacing.s3, marginTop: theme.spacing.s2 },
-  mapPreview: { width: '100%', height: 160, borderRadius: theme.radii.image, marginTop: theme.spacing.s2 },
-  rentBtn: { backgroundColor: theme.colors.primary, margin: theme.spacing.s4, padding: theme.spacing.s4, borderRadius: theme.radii.button, alignItems: 'center', ...theme.shadow.ios, elevation: theme.shadow.androidElevation },
-  rentBtnText: { color: '#fff', fontWeight: '800', fontSize: theme.typography.body },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
-  modalImage: { width: '100%', height: '80%', resizeMode: 'cover' },
-  modalClose: { position: 'absolute', top: theme.spacing.s6, right: theme.spacing.s4, padding: theme.spacing.s2 },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.surface,
+  },
+  hero: {
+    height: 300,
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  heroTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+    paddingTop: 10,
+  },
+  topRightActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  iconBtn: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 10,
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  gradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 120,
+  },
+  heroBottom: {
+    padding: 20,
+    paddingTop: 0,
+  },
+  heroTitle: {
+    color: '#fff',
+    fontSize: 28,
+    fontFamily: 'Inter-Bold',
+    marginBottom: 8,
+  },
+  heroMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  heroLocation: {
+    color: '#fff',
+    marginLeft: 8,
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+  },
+  priceRatingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  heroPrice: {
+    color: '#fff',
+    fontSize: 24,
+    fontFamily: 'Inter-Bold',
+  },
+  ratingWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  ratingText: {
+    color: '#fff',
+    marginLeft: 6,
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+  },
+  section: {
+    padding: 20,
+  },
+  featuresRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: theme.colors.surfaceAlt,
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 24,
+  },
+  featureItem: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  featureText: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: theme.colors.title,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontFamily: 'Inter-Bold',
+    color: theme.colors.title,
+    marginBottom: 12,
+  },
+  description: {
+    color: theme.colors.secondary,
+    lineHeight: 22,
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+  },
+  showMore: {
+    color: theme.colors.primary,
+    marginTop: 8,
+    fontFamily: 'Inter-SemiBold',
+  },
+  ownerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 24,
+    backgroundColor: theme.colors.surfaceAlt,
+    padding: 16,
+    borderRadius: 16,
+  },
+  ownerAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
+  },
+  ownerName: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    color: theme.colors.title,
+  },
+  ownerRole: {
+    color: theme.colors.secondary,
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    marginTop: 2,
+  },
+  ownerRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  ownerRatingText: {
+    color: theme.colors.secondary,
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    marginLeft: 4,
+  },
+  contactIcon: {
+    backgroundColor: theme.colors.primary,
+    padding: 12,
+    borderRadius: 20,
+    marginLeft: 8,
+  },
+  galleryThumb: {
+    width: 120,
+    height: 90,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+  mapPreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: 16,
+    marginTop: 8,
+  },
+  bottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.divider,
+    ...theme.shadow.ios,
+    elevation: theme.shadow.androidElevation,
+  },
+  priceContainer: {
+    flex: 1,
+  },
+  bottomPrice: {
+    fontSize: 24,
+    fontFamily: 'Inter-Bold',
+    color: theme.colors.title,
+  },
+  bottomPriceLabel: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: theme.colors.secondary,
+  },
+  rentBtn: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 25,
+    minWidth: 140,
+    alignItems: 'center',
+  },
+  rentBtnText: {
+    color: '#fff',
+    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImage: {
+    width: width,
+    height: '80%',
+    resizeMode: 'contain',
+  },
+  modalClose: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 12,
+    borderRadius: 20,
+  },
 });

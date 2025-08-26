@@ -62,5 +62,8 @@
   "tabSearch":"بحث",
   "tabCars":"سيارات",
   "tabMessages":"الرسائل",
-  "tabProfile":"الملف"
+  "tabProfile":"الملف",
+  "description": "الوصف",
+  "gallery": "المعرض",
+  "location": "الموقع"
 }

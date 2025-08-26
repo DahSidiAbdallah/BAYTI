@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Home, MapPin, Car, User, MessageCircle } from 'lucide-react-native';
+import { Chrome as Home, MapPin, Car, User, MessageCircle } from 'lucide-react-native';
 
 function HomeIcon({ size, color }: Readonly<{ size?: number; color?: string }>) { return <Home size={size} color={color} />; }
 function MapIcon({ size, color }: Readonly<{ size?: number; color?: string }>) { return <MapPin size={size} color={color} />; }

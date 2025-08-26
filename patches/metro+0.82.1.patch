@@ -1,0 +1,83 @@
+*** Begin Patch
+*** Update File: node_modules/metro/src/Server.js
+@@
+-        const fileAbsolute = path.resolve(this._config.projectRoot, file ?? "");
+-        try {
+-          return {
+-            content: codeFrameColumns(
+-              fs.readFileSync(fileAbsolute, "utf8"),
+-              {
+-                start: {
+-                  column: column + 1,
+-                  line: lineNumber,
+-                },
+-              },
+-              {
+-                forceColor: true,
+-              }
+-            ),
+*** Begin Patch
+*** Update File: node_modules/metro/src/Server.js
+@@
+-        const fileAbsolute = path.resolve(this._config.projectRoot, file ?? "");
+-        try {
+ -          return {
+ -            content: codeFrameColumns(
+ -              fs.readFileSync(fileAbsolute, "utf8"),
+ -              {
+ -                start: {
+ -                  column: column + 1,
+ -                  line: lineNumber,
+ -                },
+ -              },
+ -              {
+ -                forceColor: true,
+ -              }
+ -            ),
+ -            location: {
+ -              row: lineNumber,
+ -              column,
+ -            },
+ -            fileName: file,
+ -          };
+ -        } catch (error) {
+ -          console.error(error);
+ -        }
++        // Skip invalid or synthetic filenames like '<anonymous>' which are
++        // not present on disk. Also skip files that don't exist to avoid
++        // throwing ENOENT when attempting to read them for code frames.
++        if (typeof file !== 'string' || file.startsWith('<')) {
++          continue;
++        }
++
++        const fileAbsolute = path.resolve(this._config.projectRoot, file);
++        try {
++          if (!fs.existsSync(fileAbsolute)) {
++            // File doesn't exist in the project; skip to next frame.
++            continue;
++          }
++
++          const source = fs.readFileSync(fileAbsolute, 'utf8');
++          return {
++            content: codeFrameColumns(
++              source,
++              {
++                start: {
++                  column: column + 1,
++                  line: lineNumber,
++                },
++              },
++              {
++                forceColor: true,
++              }
++            ),
++            location: {
++              row: lineNumber,
++              column,
++            },
++            fileName: file,
++          };
++        } catch (error) {
++          console.error(error);
++        }
+*** End Patch

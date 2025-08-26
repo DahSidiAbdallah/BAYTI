@@ -167,7 +167,7 @@ export default function SearchScreen() {
                   }
                 } catch (err) { console.warn('animate failed', err); }
                 // navigate to listing details
-                router.push({ pathname: '/listing/[id]', params: { id: `${it.kind}-${it.id}` } });
+                router.push(`/listing/${it.id}`);
               }}
             />
           ) : null
@@ -197,7 +197,7 @@ export default function SearchScreen() {
             <TouchableOpacity
               key={`${item.kind}-${item.id}`}
               style={styles.propertyCard}
-              onPress={() => router.push({ pathname: '/listing/[id]', params: { id: `${item.kind}-${item.id}` } })}
+              onPress={() => router.push(`/listing/${item.id}`)}
             >
               <View style={styles.imageContainer}>
                 <Image source={{ uri: item.image }} style={styles.image} />

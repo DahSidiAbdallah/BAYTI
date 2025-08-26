@@ -64,12 +64,6 @@ export default function TabLayout() {
           tabBarIcon: UserIcon,
         }}
       />
-      <Tabs.Screen
-        name="listing"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs>
   );
 }

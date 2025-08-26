@@ -37,7 +37,7 @@ export default function HomeScreen() {
   <Text style={styles.sectionTitle}>{t('featuredProperties')}</Text>
         <View style={styles.propertiesGrid}>
           {filteredProperties.map((property) => (
-            <PropertyCard key={property.id} property={property} onPress={() => router.push({ pathname: '/listing/[id]', params: { id: `property-${property.id}` } })} />
+            <PropertyCard key={property.id} property={property} onPress={() => router.push(`/listing/${property.id}`)} />
           ))}
         </View>
       </ScrollView>

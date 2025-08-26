@@ -21,7 +21,7 @@ export default function CarsScreen() {
   <Text style={styles.sectionTitle}>{t('availableCars')}</Text>
         <View style={styles.carsGrid}>
           {MOCK_CARS.map((car) => (
-            <CarCard key={car.id} car={car} />
+            <CarCard key={car.id} car={car} onPress={() => router.push(`/listing/${car.id}`)} />
           ))}
         </View>
       </ScrollView>

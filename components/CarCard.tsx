@@ -6,11 +6,12 @@ import { Car } from '@/types/Car';
 
 interface CarCardProps {
   car: Car;
+  onPress?: () => void;
 }
 
-export default function CarCard({ car }: Readonly<CarCardProps>) {
+export default function CarCard({ car, onPress }: Readonly<CarCardProps>) {
   return (
-    <TouchableOpacity style={styles.container}>
+    <TouchableOpacity style={styles.container} onPress={onPress}>
       <View style={styles.imageContainer}>
         <Image source={{ uri: car.image }} style={styles.image} />
         <View style={styles.priceOverlay}>

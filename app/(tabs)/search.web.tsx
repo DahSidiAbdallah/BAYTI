@@ -182,7 +182,7 @@ export default function SearchWeb() {
                   leafletMapRef.current.setView([item.latitude ?? 0, item.longitude ?? 0], 14, { animate: true });
                   found.marker.openPopup();
                 }
-                router.push({ pathname: '/listing/[id]', params: { id } });
+                router.push(`/listing/${item.id}`);
               }}
             >
               <View style={styles.imageContainer}>

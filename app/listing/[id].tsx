@@ -3,7 +3,7 @@ import { ScrollView, View, Text, StyleSheet, ImageBackground, TouchableOpacity, 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MOCK_PROPERTIES, MOCK_CARS } from '../../data/mockData';
-import { ChevronLeft, Star, MapPin, Phone, MessageSquare, Heart, Share2, Calendar, Users, Car as CarIcon, Home as HomeIcon } from 'lucide-react-native';
+import { ChevronLeft, Star, MapPin, Phone, MessageSquare, Heart, Share2, Calendar, Users, Car as CarIcon, Chrome as HomeIcon } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import theme from '../theme';
 import { t } from '@/i18n';
